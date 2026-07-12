@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>数字→下の文字検出</title>
+</head>
+<body>
+
+<video id="video" autoplay playsinline style="width:100%;"></video>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<button onclick="scan()">スキャン</button>
+
+<p id="result"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js"></script>
+
+<script>
+const video = document.getElementById("video");
+
+// カメラ起動（外カメラ）
+navigator.mediaDevices.getUserMedia({
+  video: {
+    facingMode: { exact: "environment" }
+  }
+})
+.then(stream => video.srcObject = stream)
+.catch(err => alert("カメラエラー: " + err));
+
+function scan() {
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video, 0, 0);
+
+  Tesseract.recognize(canvas, 'eng')
+    .then(({ data: { text } }) => {
+      document.getElementById("result").innerText = text;
+    });
+}
+</script>
+
+</body>
+</html>
