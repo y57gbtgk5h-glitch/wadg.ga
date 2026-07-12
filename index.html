@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>数字→下の文字検出</title>
+</head>
+<body>
+  <video id="video" autoplay playsinline width="300"></video>
+  <canvas id="canvas" width="300" height="200" style="display:none;"></canvas>
+
+  <input type="text" id="target" placeholder="例: 123,456">
+  <button onclick="scan()">スキャン</button>
+
+  <p id="result"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js"></script>
+
+  <script>
+    const video = document.getElementById("video");
+
+    // カメラ起動
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => video.srcObject = stream);
+
+    async function scan() {
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const result = await Tesseract.recognize(
+        canvas,
+        'eng',
+        { logger: m => console.log(m) }
+      );
+
+      const words = result.data.words;
+
+      const targets = document.getElementById("target").value.split(",");
+      let output = "";
+
+      words.forEach(num => {
+        if (targets.includes(num.text)) {
+          // 真下の文字探す
+          let below = words.find(w =>
+            Math.abs(w.bbox.x0 - num.bbox.x0) < 20 && // 横ズレ許容
+            w.bbox.y0 > num.bbox.y1 &&               // 下にある
+            w.bbox.y0 - num.bbox.y1 < 50             // 距離制限
+          );
+
+          if (below) {
+            output += `${num.text} → ${below.text}<br>`;
+          }
+        }
+      });
+
+      document.getElementById("result").innerHTML = output;
+    }
+  </script>
+</body>
+</html>
